@@ -11,6 +11,7 @@ namespace DynaMD
         private readonly ClrHeap _heap;
         private readonly ulong _address;
 
+        private readonly bool _interior;
         private ClrType _type;
 
         public DynamicProxy(ClrHeap heap, ulong address)
@@ -23,6 +24,7 @@ namespace DynaMD
             : this(heap, address)
         {
             _type = overrideType;
+            _interior = true;
         }
 
         protected ClrType Type
@@ -49,22 +51,22 @@ namespace DynaMD
 
                 if (field == null)
                 {
-                    // Stil not found
-                    throw new InvalidOperationException("Field not found: " + binder.Name);
+                    // Still not found
+                    result = null;
+                    return false;
                 }
             }
 
             if (!field.HasSimpleValue)
             {
-                result = new DynamicProxy(_heap, _address + (ulong)field.Offset, field.Type);
+                result = LinkToStruct(field);
 
                 return true;
             }
 
-            result = field.GetValue(_address);
+            result = field.GetValue(_address, _interior);
 
-            // TODO: Use field.IsValueClass?
-            if (result is ulong && field.Type.Name != "System.UInt64")
+            if (IsReference(result, field.Type))
             {
                 result = new DynamicProxy(_heap, (ulong)result);
             }
@@ -74,6 +76,16 @@ namespace DynaMD
 
         public override bool TryConvert(ConvertBinder binder, out object result)
         {
+            IEnumerable<dynamic> Enumerate()
+            {
+                var length = Type.GetArrayLength(_address);
+
+                for (int i = 0; i < length; i++)
+                {
+                    yield return GetElementAt(i);
+                }
+            }
+            
             if (binder.ReturnType == typeof(IEnumerable))
             {
                 result = Enumerate();
@@ -83,6 +95,7 @@ namespace DynaMD
             result = null;
             return false;
         }
+
         public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
         {
             if (!Type.IsArray)
@@ -96,24 +109,39 @@ namespace DynaMD
             return true;
         }
 
-        private IEnumerable<dynamic> Enumerate()
+        private static bool IsReference(object result, ClrType type)
         {
-            var length = Type.GetArrayLength(_address);
+            return !(result is string) && type.IsObjectReference;
+        }
 
-            for (int i = 0; i < length; i++)
+        private DynamicProxy LinkToStruct(ClrField field)
+        {
+            var childAddress = _address + (ulong)field.Offset;
+
+            if (!_interior)
             {
-                yield return GetElementAt(i);
+                // Parent class header
+                childAddress += (ulong)_heap.PointerSize;
             }
+
+            return new DynamicProxy(_heap, childAddress, field.Type);
         }
 
         private object GetElementAt(int index)
         {
-            if (Type.HasSimpleValue)
+            if (Type.ComponentType.HasSimpleValue)
             {
+                var result = Type.GetArrayElementValue(_address, index);
+
+                if (IsReference(result, Type.ComponentType))
+                {
+                    return new DynamicProxy(_heap, (ulong)result);
+                }
+
                 return Type.GetArrayElementValue(_address, index);
             }
 
-            return new DynamicProxy(_heap, Type.GetArrayElementAddress(_address, index));
+            return new DynamicProxy(_heap, Type.GetArrayElementAddress(_address, index), Type.ComponentType);
         }
     }
 }

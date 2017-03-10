@@ -9,6 +9,5 @@ namespace Microsoft.Diagnostics.Runtime
         {
             return new DynamicProxy(heap, address);
         }
-
     }
 }
