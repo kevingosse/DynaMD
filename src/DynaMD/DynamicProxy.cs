@@ -68,14 +68,31 @@ namespace DynaMD
 
             if (IsReference(result, field.Type))
             {
-                result = new DynamicProxy(_heap, (ulong)result);
+                result = GetProxy(_heap, (ulong)result);
             }
 
             return true;
         }
 
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
+        {
+            if (binder.Name == "GetClrType")
+            {
+                result = Type;
+                return true;
+            }
+
+            return base.TryInvokeMember(binder, args, out result);
+        }
+
         public override bool TryConvert(ConvertBinder binder, out object result)
         {
+            if (binder.ReturnType == typeof(ulong))
+            {
+                result = _address;
+                return true;
+            }
+
             IEnumerable<dynamic> Enumerate()
             {
                 var length = Type.GetArrayLength(_address);
@@ -114,6 +131,11 @@ namespace DynaMD
             return !(result is string) && type.IsObjectReference;
         }
 
+        private static DynamicProxy GetProxy(ClrHeap heap, ulong address)
+        {
+            return address == 0 ? null : new DynamicProxy(heap, address);
+        }
+
         private DynamicProxy LinkToStruct(ClrField field)
         {
             var childAddress = _address + (ulong)field.Offset;
@@ -135,7 +157,9 @@ namespace DynaMD
 
                 if (IsReference(result, Type.ComponentType))
                 {
-                    return new DynamicProxy(_heap, (ulong)result);
+                    var address = (ulong)result;
+
+                    return GetProxy(_heap, (ulong)result);
                 }
 
                 return Type.GetArrayElementValue(_address, index);

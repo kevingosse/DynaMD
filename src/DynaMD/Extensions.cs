@@ -7,6 +7,11 @@ namespace Microsoft.Diagnostics.Runtime
     {
         public static dynamic GetProxy(this ClrHeap heap, ulong address)
         {
+            if (address == 0)
+            {
+                return null;
+            }
+
             return new DynamicProxy(heap, address);
         }
     }
