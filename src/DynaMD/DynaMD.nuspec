@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>DynaMD</id>
+    <version>1.0.1-pre</version>
+    <title>DynaMD</title>
+    <authors>Kevin Gosse, Christophe Nasarre</authors>
+    <owners>KooKiz</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Helper objects to browse complex structures returned by ClrMD</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Copyright 2017</copyright>
+    <tags>ClrMD WinDBG SOS</tags>
+  </metadata>
+</package>
