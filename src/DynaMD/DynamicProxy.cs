@@ -128,7 +128,7 @@ namespace DynaMD
 
         private static bool IsReference(object result, ClrType type)
         {
-            return !(result is string) && type.IsObjectReference;
+            return result != null && !(result is string) && type.IsObjectReference;
         }
 
         private static DynamicProxy GetProxy(ClrHeap heap, ulong address)
@@ -157,8 +157,6 @@ namespace DynaMD
 
                 if (IsReference(result, Type.ComponentType))
                 {
-                    var address = (ulong)result;
-
                     return GetProxy(_heap, (ulong)result);
                 }
 
