@@ -144,6 +144,34 @@ namespace DynaMD.Tests
             Assert.AreEqual(10, proxy.Values.Length);
         }
 
+        [Test]
+        public void Can_read_the_address_of_an_object()
+        {
+            var containerAddress = _heap.EnumerateObjectAddresses()
+                .First(u => _heap.GetObjectType(u).Name == typeof(ClassWithReference).FullName);
+
+            var type = _heap.GetObjectType(containerAddress);
+            var field = type.GetFieldByName("Reference");
+            var expected = field.GetValue(containerAddress);
+
+            var proxy = GetProxy<ClassWithReference>();
+
+            Assert.AreEqual(expected, (ulong)proxy.Reference);
+        }
+
+        [Test]
+        public void Can_read_the_type_of_an_object()
+        {
+            var containerAddress = _heap.EnumerateObjectAddresses()
+                .First(u => _heap.GetObjectType(u).Name == typeof(ClassWithReference).FullName);
+
+            var expectedType = _heap.GetObjectType(containerAddress);
+
+            var proxy = GetProxy<ClassWithReference>();
+
+            Assert.AreEqual(expectedType, proxy.GetClrType());
+        }
+
         private dynamic GetProxy<T>()
         {
             var address = FindAddress<T>();
