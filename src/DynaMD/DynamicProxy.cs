@@ -42,6 +42,12 @@ namespace DynaMD
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
+            if (binder.Name == "Length" && Type.IsArray)
+            {
+                result = Type.GetArrayLength(_address);
+                return true;
+            }
+
             var field = Type.GetFieldByName(binder.Name);
 
             if (field == null)

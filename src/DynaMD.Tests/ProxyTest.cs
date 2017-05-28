@@ -136,6 +136,14 @@ namespace DynaMD.Tests
             Assert.AreEqual(expected, actual);
         }
 
+        [Test]
+        public void Can_read_length_of_array()
+        {
+            var proxy = GetProxy<ClassWithArray>();
+
+            Assert.AreEqual(10, proxy.Values.Length);
+        }
+
         private dynamic GetProxy<T>()
         {
             var address = FindAddress<T>();
