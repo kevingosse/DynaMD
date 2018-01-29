@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DynaMD</id>
-    <version>1.0.2-pre</version>
+    <version>1.0.2</version>
     <title>DynaMD</title>
     <authors>Kevin Gosse, Christophe Nasarre</authors>
     <owners>KooKiz</owners>
