@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DynaMD</id>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <title>DynaMD</title>
     <authors>Kevin Gosse, Christophe Nasarre</authors>
     <owners>KooKiz</owners>
@@ -12,4 +12,7 @@
     <copyright>Copyright 2017</copyright>
     <tags>ClrMD WinDBG SOS</tags>
   </metadata>
+  <files>
+    <file src="bin\release\DynaMD.dll" target="lib\net452" />
+  </files>
 </package>
