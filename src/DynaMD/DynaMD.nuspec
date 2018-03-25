@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>DynaMD</id>
-    <version>1.0.3</version>
+    <version>1.0.3.1</version>
     <title>DynaMD</title>
     <authors>Kevin Gosse, Christophe Nasarre</authors>
     <owners>KooKiz</owners>
@@ -11,6 +11,9 @@
     <releaseNotes>Initial release.</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>ClrMD WinDBG SOS</tags>
+    <dependencies>
+      <dependency id="Microsoft.Diagnostics.Runtime" version="[0.9.170809.3,)" />
+    </dependencies>
   </metadata>
   <files>
     <file src="bin\release\DynaMD.dll" target="lib\net452" />
