@@ -172,6 +172,25 @@ namespace DynaMD.Tests
             Assert.AreEqual(expectedType, proxy.GetClrType());
         }
 
+        [Test]
+        public void Can_compare_the_typeof_an_object()
+        {
+            var proxy = GetProxy<ClassWithReference>();
+
+            Assert.IsTrue(proxy.Is(typeof(ClassWithReference).FullName));
+        }
+
+        [Test]
+        public void Can_find_instances_of_a_type()
+        {
+            var expectedNumber = _heap.EnumerateObjects().Count(o => o.Type.Name == typeof(ClassWithStringField).FullName);
+
+            var proxies = _heap.GetProxies<ClassWithStringField>().ToList();
+
+            Assert.AreEqual(expectedNumber, proxies.Count);
+            Assert.IsTrue(proxies.All(p => p.GetClrType().Name == typeof(ClassWithStringField).FullName));
+        }
+
         private dynamic GetProxy<T>()
         {
             var address = FindAddress<T>();

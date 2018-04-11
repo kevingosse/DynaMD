@@ -88,6 +88,22 @@ namespace DynaMD
                 return true;
             }
 
+            if (binder.Name == "Is")
+            {
+                if (args.Length != 1)
+                {
+                    throw new ArgumentException("Missing argument 'type'");
+                }
+
+                if (!(args[0] is string expectedType))
+                {
+                    throw new ArgumentException("The 'type' argument must be a string");
+                }
+
+                result = Type.Name == expectedType;
+                return true;
+            }
+
             return base.TryInvokeMember(binder, args, out result);
         }
 
