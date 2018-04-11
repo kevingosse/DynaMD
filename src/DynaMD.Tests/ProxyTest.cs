@@ -191,6 +191,16 @@ namespace DynaMD.Tests
             Assert.IsTrue(proxies.All(p => p.GetClrType().Name == typeof(ClassWithStringField).FullName));
         }
 
+        [Test]
+        public void Can_convert_a_ClrObject()
+        {
+            var obj = _heap.EnumerateObjects().First(o => o.Type.Name == typeof(ClassWithReference).FullName);
+
+            var proxy = obj.AsDynamic();
+
+            Assert.AreEqual("OK", proxy.Reference.Value);
+        }
+
         private dynamic GetProxy<T>()
         {
             var address = FindAddress<T>();

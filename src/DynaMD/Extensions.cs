@@ -31,5 +31,12 @@ namespace Microsoft.Diagnostics.Runtime
                 }
             }
         }
+
+        public static dynamic AsDynamic(this ClrObject clrObject)
+        {
+            var heap = clrObject.Type.Heap;
+
+            return heap.GetProxy(clrObject.Address);
+        }
     }
 }
