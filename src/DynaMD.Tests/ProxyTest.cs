@@ -64,6 +64,46 @@ namespace DynaMD.Tests
         }
 
         [Test]
+        public void Can_marshal_to_blittable_type()
+        {
+            var proxy = GetProxy<StructWithULongField>();
+
+            var value = (StructWithULongField)proxy;
+
+            Assert.AreEqual(666, value.Value);
+        }
+
+        [Test]
+        public void Can_marshal_to_array()
+        {
+            var proxy = GetProxy<ClassWithArray>();
+
+            var value = (int[])proxy.Values;
+
+            Assert.AreEqual(Enumerable.Range(0, 10).Select(i => 10 - i).ToArray(), value);
+        }
+
+        [Test]
+        public void Can_marshal_to_empty_array()
+        {
+            var proxy = GetProxy<ClassWithEmptyArray>();
+
+            var value = (int[])proxy.Values;
+
+            Assert.AreEqual(new int[0], value);
+        }
+
+        [Test]
+        public void Can_marshal_struct_field_from_nested_struct_to_blittable_type()
+        {
+            var proxy = GetProxy<StructWithStructWithStructField>();
+
+            var value = (StructWithULongField)proxy.Value.Value;
+
+            Assert.AreEqual(666, value.Value);
+        }
+
+        [Test]
         public void Can_read_value_field_from_struct()
         {
             var proxy = GetProxy<StructWithULongField>();

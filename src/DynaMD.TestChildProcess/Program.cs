@@ -25,7 +25,8 @@ namespace DynaMD.TestChildProcess
                 new ClassWithArrayOfStruct(),
                 new ClassWithArrayOfClass(),
                 new StructWithStructField(666),
-                new StructWithStructWithStructField(666)
+                new StructWithStructWithStructField(666),
+                new ClassWithEmptyArray()
             };
 
             Console.WriteLine(Ready);
@@ -42,6 +43,11 @@ namespace DynaMD.TestChildProcess
         public int Field2;
         public int Field3;
         public int[] Values = Enumerable.Range(0, 10).Select(i => 10 - i).ToArray();
+    }
+
+    public class ClassWithEmptyArray
+    {
+        public int[] Values = new int[0];
     }
 
     public class ClassWithArrayOfClass

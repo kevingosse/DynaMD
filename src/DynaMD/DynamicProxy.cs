@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using Microsoft.Diagnostics.Runtime;
 
 namespace DynaMD
@@ -39,6 +41,8 @@ namespace DynaMD
                 return _type;
             }
         }
+
+        protected ulong AddressWithoutHeader => _interior ? _address : _address + (ulong)_heap.PointerSize;
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
@@ -107,12 +111,45 @@ namespace DynaMD
             return base.TryInvokeMember(binder, args, out result);
         }
 
+        public static bool IsBlittable(Type type)
+        {
+            if (type.IsArray)
+            {
+                var elem = type.GetElementType();
+                return elem.IsValueType && IsBlittable(elem);
+            }
+            try
+            {
+                object instance = FormatterServices.GetUninitializedObject(type);
+                GCHandle.Alloc(instance, GCHandleType.Pinned).Free();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public override bool TryConvert(ConvertBinder binder, out object result)
         {
             if (binder.ReturnType == typeof(ulong))
             {
                 result = _address;
                 return true;
+            }
+
+            if (binder.ReturnType.FullName == Type.Name && IsBlittable(binder.ReturnType))
+            {
+                if (binder.ReturnType.IsArray)
+                {
+                    result = MarshalToArray(binder.ReturnType);
+                    return true;
+                }
+
+
+                result = MarshalToStruct(binder.ReturnType);
+                return true;
+
             }
 
             IEnumerable<dynamic> Enumerate()
@@ -124,15 +161,14 @@ namespace DynaMD
                     yield return GetElementAt(i);
                 }
             }
-            
+
             if (binder.ReturnType == typeof(IEnumerable))
             {
                 result = Enumerate();
                 return true;
             }
 
-            result = null;
-            return false;
+            throw new InvalidCastException("Can only cast array and blittable types, or to ulong to retrieve the address");
         }
 
         public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
@@ -160,13 +196,7 @@ namespace DynaMD
 
         private DynamicProxy LinkToStruct(ClrField field)
         {
-            var childAddress = _address + (ulong)field.Offset;
-
-            if (!_interior)
-            {
-                // Parent class header
-                childAddress += (ulong)_heap.PointerSize;
-            }
+            var childAddress = AddressWithoutHeader + (ulong)field.Offset;
 
             return new DynamicProxy(_heap, childAddress, field.Type);
         }
@@ -186,6 +216,48 @@ namespace DynaMD
             }
 
             return new DynamicProxy(_heap, Type.GetArrayElementAddress(_address, index), Type.ComponentType);
+        }
+
+        private unsafe object MarshalToStruct(Type destinationType)
+        {
+            var buffer = new byte[Type.BaseSize];
+
+            _heap.ReadMemory(AddressWithoutHeader, buffer, 0, buffer.Length);
+
+            fixed (byte* p = buffer)
+            {
+                return Marshal.PtrToStructure(new IntPtr(p), destinationType);
+            }
+        }
+
+        private object MarshalToArray(Type arrayType)
+        {
+            var length = Type.GetArrayLength(_address);
+            var buffer = new byte[Type.ElementSize * length];
+
+            var array = Activator.CreateInstance(arrayType, length);
+
+            if (length == 0)
+            {
+                return array;
+            }
+
+            var arrayContentAddress = Type.GetArrayElementAddress(_address, 0);
+
+            _heap.ReadMemory(arrayContentAddress, buffer, 0, buffer.Length);
+
+            var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+
+            try
+            {
+                Marshal.Copy(buffer, 0, handle.AddrOfPinnedObject(), buffer.Length);
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            return array;
         }
     }
 }
