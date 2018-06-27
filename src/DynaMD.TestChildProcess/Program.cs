@@ -26,7 +26,9 @@ namespace DynaMD.TestChildProcess
                 new ClassWithArrayOfClass(),
                 new StructWithStructField(666),
                 new StructWithStructWithStructField(666),
-                new ClassWithEmptyArray()
+                new ClassWithEmptyArray(),
+                new StructWithDate(),
+                new StructWithArray()
             };
 
             Console.WriteLine(Ready);
@@ -35,6 +37,16 @@ namespace DynaMD.TestChildProcess
 
             GC.KeepAlive(values);
         }
+    }
+
+    public class StructWithDate
+    {
+        public DateTime Date = new DateTime(2001, 1, 1);
+    }
+
+    public struct StructWithArray
+    {
+        public int[] Values;
     }
 
     public class ClassWithArray

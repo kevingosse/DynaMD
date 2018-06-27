@@ -48,6 +48,16 @@ namespace DynaMD.Tests
         }
 
         [Test]
+        public void Can_marshal_datetime()
+        {
+            var proxy = GetProxy<StructWithDate>().Date;
+
+            var dt = (DateTime)proxy;
+
+            Assert.AreEqual(new DateTime(2001, 1, 1), dt);
+        }
+
+        [Test]
         public void Can_read_ref_field_from_class()
         {
             var proxy = GetProxy<ClassWithReference>();
@@ -64,7 +74,7 @@ namespace DynaMD.Tests
         }
 
         [Test]
-        public void Can_marshal_to_blittable_type()
+        public void Can_marshal_to_blittable_struct()
         {
             var proxy = GetProxy<StructWithULongField>();
 
@@ -74,13 +84,36 @@ namespace DynaMD.Tests
         }
 
         [Test]
-        public void Can_marshal_to_array()
+        public void Can_not_marshal_to_struct_with_array()
+        {
+            var proxy = GetProxy<StructWithArray>();
+
+            Assert.Throws<InvalidCastException>(() => GC.KeepAlive((StructWithArray)proxy));
+        }
+
+        [Test]
+        public void Can_marshal_to_array_of_primitives()
         {
             var proxy = GetProxy<ClassWithArray>();
 
             var value = (int[])proxy.Values;
 
             Assert.AreEqual(Enumerable.Range(0, 10).Select(i => 10 - i).ToArray(), value);
+        }
+
+        [Test]
+        public void Can_marshal_to_array_of_blittable_struct()
+        {
+            var proxy = GetProxy<ClassWithArrayOfStruct>();
+
+            var value = (StructWithULongField[])proxy.Array;
+
+            Assert.AreEqual(4, value.Length);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.AreEqual(i, value[i].Value);
+            }
         }
 
         [Test]

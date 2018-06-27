@@ -2,8 +2,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 using Microsoft.Diagnostics.Runtime;
 
 namespace DynaMD
@@ -111,23 +113,25 @@ namespace DynaMD
             return base.TryInvokeMember(binder, args, out result);
         }
 
-        public static bool IsBlittable(Type type)
+        public static bool IsBlittable(Type type, bool allowArrays = true)
         {
             if (type.IsArray)
             {
-                var elem = type.GetElementType();
-                return elem.IsValueType && IsBlittable(elem);
+                return allowArrays && IsBlittable(type.GetElementType());
             }
-            try
-            {
-                object instance = FormatterServices.GetUninitializedObject(type);
-                GCHandle.Alloc(instance, GCHandleType.Pinned).Free();
-                return true;
-            }
-            catch
+
+            if (!type.IsValueType)
             {
                 return false;
             }
+
+            if (type.IsPrimitive)
+            {
+                return true;
+            }
+
+            return type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                .All(f => IsBlittable(f.FieldType, false));
         }
 
         public override bool TryConvert(ConvertBinder binder, out object result)
@@ -142,14 +146,12 @@ namespace DynaMD
             {
                 if (binder.ReturnType.IsArray)
                 {
-                    result = MarshalToArray(binder.ReturnType);
+                    result = MarshalToArray(binder.ReturnType, Type);
                     return true;
                 }
 
-
-                result = MarshalToStruct(binder.ReturnType);
+                result = MarshalToStruct(AddressWithoutHeader, binder.ReturnType, Type);
                 return true;
-
             }
 
             IEnumerable<dynamic> Enumerate()
@@ -194,6 +196,15 @@ namespace DynaMD
             return address == 0 ? null : new DynamicProxy(heap, address);
         }
 
+        // ReSharper disable once UnusedMember.Local - Used through reflection
+        private static unsafe object Read<T>(byte[] buffer)
+        {
+            fixed (byte* b = buffer)
+            {
+                return Unsafe.Read<T>(b);
+            }
+        }
+
         private DynamicProxy LinkToStruct(ClrField field)
         {
             var childAddress = AddressWithoutHeader + (ulong)field.Offset;
@@ -218,43 +229,35 @@ namespace DynaMD
             return new DynamicProxy(_heap, Type.GetArrayElementAddress(_address, index), Type.ComponentType);
         }
 
-        private unsafe object MarshalToStruct(Type destinationType)
+        private object MarshalToStruct(ulong address, Type destinationType, ClrType destinationClrType)
         {
-            var buffer = new byte[Type.BaseSize];
+            var buffer = new byte[destinationClrType.BaseSize];
 
-            _heap.ReadMemory(AddressWithoutHeader, buffer, 0, buffer.Length);
+            _heap.ReadMemory(address, buffer, 0, buffer.Length);
 
-            fixed (byte* p = buffer)
-            {
-                return Marshal.PtrToStructure(new IntPtr(p), destinationType);
-            }
+            var method = GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Static).First(m => m.Name == "Read").MakeGenericMethod(destinationType);
+
+            return method.Invoke(null, new object[] { buffer });
         }
 
-        private object MarshalToArray(Type arrayType)
+        private object MarshalToArray(Type arrayType, ClrType arrayClrType)
         {
             var length = Type.GetArrayLength(_address);
-            var buffer = new byte[Type.ElementSize * length];
 
-            var array = Activator.CreateInstance(arrayType, length);
+            var array = (Array)Activator.CreateInstance(arrayType, length);
+
+            var elementType = arrayType.GetElementType();
+            var elementClrType = arrayClrType.ComponentType;
 
             if (length == 0)
             {
                 return array;
             }
 
-            var arrayContentAddress = Type.GetArrayElementAddress(_address, 0);
-
-            _heap.ReadMemory(arrayContentAddress, buffer, 0, buffer.Length);
-
-            var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-
-            try
+            for (int i = 0; i < length; i++)
             {
-                Marshal.Copy(buffer, 0, handle.AddrOfPinnedObject(), buffer.Length);
-            }
-            finally
-            {
-                handle.Free();
+                var elementAddress = Type.GetArrayElementAddress(_address, i);
+                array.SetValue(MarshalToStruct(elementAddress, elementType, elementClrType), i);
             }
 
             return array;
