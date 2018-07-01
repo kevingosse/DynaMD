@@ -134,6 +134,15 @@ namespace DynaMD.Tests
             Assert.IsNull(segment);
         }
 
+        [Test]
+        public void Should_not_fix_good_names()
+        {
+            var typeName = "System.Collections.Concurrent.ConcurrentDictionary<System.Int32,System.String>";
+
+            var fixedName = Extensions.FixTypeName(typeName);
+
+            Assert.AreEqual(typeName, fixedName);
+        }
 
         [Test]
         public void Can_marshal_to_array_of_blittable_struct()

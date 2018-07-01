@@ -44,6 +44,11 @@ namespace Microsoft.Diagnostics.Runtime
 
         public static string FixTypeName(string typeName)
         {
+            if (!typeName.Contains("`"))
+            {
+                return typeName;
+            }
+
             var sb = new StringBuilder();
 
             FixGenericsWorker(typeName, 0, typeName.Length, sb);
@@ -54,7 +59,7 @@ namespace Microsoft.Diagnostics.Runtime
         /// <summary>
         /// A messy version with better performance that doesn't use regular expression.
         /// </summary>
-        public static int FixGenericsWorker(string name, int start, int end, StringBuilder sb)
+        private static int FixGenericsWorker(string name, int start, int end, StringBuilder sb)
         {
             int num1 = 0;
             for (; start < end; ++start)
