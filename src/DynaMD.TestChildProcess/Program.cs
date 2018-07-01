@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynaMD.TestChildProcess
 {
@@ -28,7 +26,8 @@ namespace DynaMD.TestChildProcess
                 new StructWithStructWithStructField(666),
                 new ClassWithEmptyArray(),
                 new StructWithDate(),
-                new StructWithArray()
+                new StructWithArray(),
+                CreateDictionary()
             };
 
             Console.WriteLine(Ready);
@@ -36,6 +35,14 @@ namespace DynaMD.TestChildProcess
             Console.ReadLine();
 
             GC.KeepAlive(values);
+        }
+
+        private static ConcurrentDictionary<int, string> CreateDictionary()
+        {
+            var dictionary = new ConcurrentDictionary<int, string>();
+            dictionary.TryAdd(1, "one");
+            dictionary.TryAdd(2, "two");
+            return dictionary;
         }
     }
 

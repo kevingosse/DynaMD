@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using DynaMD.TestChildProcess;
 using Microsoft.Diagnostics.Runtime;
 using NUnit.Framework;
@@ -99,6 +100,28 @@ namespace DynaMD.Tests
             var value = (int[])proxy.Values;
 
             Assert.AreEqual(Enumerable.Range(0, 10).Select(i => 10 - i).ToArray(), value);
+        }
+
+        [Test]
+        public void Can_fetch_value_of_a_concurrentdictionary_bucket()
+        {
+            var dico = GetProxy<System.Collections.Concurrent.ConcurrentDictionary<int, string>>();
+            var buckets = dico.m_tables.m_buckets;
+
+            dynamic bucket = null;
+
+            foreach (var b in buckets)
+            {
+                if (b != null)
+                {
+                    bucket = b;
+                    break;
+                }
+            }
+
+            var value = bucket.m_value;
+
+            Assert.IsInstanceOf<string>(value);
         }
 
         [Test]
@@ -276,17 +299,7 @@ namespace DynaMD.Tests
 
         private dynamic GetProxy<T>()
         {
-            var address = FindAddress<T>();
-
-            return _heap.GetProxy(address);
-        }
-
-        private ulong FindAddress<T>()
-        {
-            var typeName = typeof(T).FullName;
-
-            return _heap.EnumerateObjectAddresses()
-                .First(u => _heap.GetObjectType(u).Name == typeName);
+            return _heap.GetProxies<T>().First();
         }
     }
 }

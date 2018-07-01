@@ -5,7 +5,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Microsoft.Diagnostics.Runtime;
 
 namespace DynaMD
@@ -80,7 +79,15 @@ namespace DynaMD
 
             if (IsReference(result, field.Type))
             {
-                result = GetProxy(_heap, (ulong)result);
+                var fieldAddress = (ulong)result;
+
+                // Sometimes, ClrMD isn't capable of resolving the property type using the field
+                // Try again using directly the address, in case we fetch something different
+                var type = _heap.GetObjectType(fieldAddress);
+
+                var alternativeValue = type.GetValue(fieldAddress);
+
+                result = alternativeValue is ulong ? GetProxy(_heap, fieldAddress) : alternativeValue;
             }
 
             return true;
