@@ -83,11 +83,20 @@ namespace DynaMD
 
                 // Sometimes, ClrMD isn't capable of resolving the property type using the field
                 // Try again using directly the address, in case we fetch something different
-                var type = _heap.GetObjectType(fieldAddress);
+                if (fieldAddress != 0)
+                {
+                    var type = _heap.GetObjectType(fieldAddress);
 
-                var alternativeValue = type.GetValue(fieldAddress);
+                    var alternativeValue = type.GetValue(fieldAddress);
 
-                result = alternativeValue is ulong ? GetProxy(_heap, fieldAddress) : alternativeValue;
+                    if (!(alternativeValue is ulong))
+                    {
+                        result = alternativeValue;
+                        return true;
+                    }
+                }
+
+                result = GetProxy(_heap, fieldAddress);
             }
 
             return true;

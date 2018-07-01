@@ -125,6 +125,17 @@ namespace DynaMD.Tests
         }
 
         [Test]
+        public void Does_not_throw_when_accessing_null_field()
+        {
+            var queue = GetProxy<System.Collections.Concurrent.ConcurrentQueue<int>>();
+            var segment = queue.m_head;
+            segment = segment.m_next;
+
+            Assert.IsNull(segment);
+        }
+
+
+        [Test]
         public void Can_marshal_to_array_of_blittable_struct()
         {
             var proxy = GetProxy<ClassWithArrayOfStruct>();

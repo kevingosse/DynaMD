@@ -27,7 +27,8 @@ namespace DynaMD.TestChildProcess
                 new ClassWithEmptyArray(),
                 new StructWithDate(),
                 new StructWithArray(),
-                CreateDictionary()
+                CreateDictionary(),
+                new ConcurrentQueue<int>()
             };
 
             Console.WriteLine(Ready);
