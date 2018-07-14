@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DynaMD.TestChildProcess
@@ -8,7 +9,7 @@ namespace DynaMD.TestChildProcess
     {
         public const string Ready = "Ready";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var values = new object[]
             {
@@ -28,7 +29,9 @@ namespace DynaMD.TestChildProcess
                 new StructWithDate(),
                 new StructWithArray(),
                 CreateDictionary(),
-                new ConcurrentQueue<int>()
+                new ConcurrentQueue<int>(),
+                new ClassWithReference2(),
+                new ClassWithListOfString()
             };
 
             Console.WriteLine(Ready);
@@ -45,6 +48,11 @@ namespace DynaMD.TestChildProcess
             dictionary.TryAdd(2, "two");
             return dictionary;
         }
+    }
+
+    public class ClassWithListOfString
+    {
+        public List<string> List = new List<string> { "Hello", "World" };
     }
 
     public class StructWithDate
@@ -72,9 +80,9 @@ namespace DynaMD.TestChildProcess
 
     public class ClassWithArrayOfClass
     {
-        public int Field;
-        public int Field2;
-        public int Field3;
+        public int Field = 10;
+        public int Field2 = 11;
+        public int Field3 = 12;
         public ClassWithStringField[] Values = Enumerable.Range(0, 10).Select(i => new ClassWithStringField { Value = i.ToString() }).ToArray();
     }
 
@@ -82,6 +90,11 @@ namespace DynaMD.TestChildProcess
     public class ClassWithReference
     {
         public ClassWithStringField Reference = new ClassWithStringField();
+    }
+
+    public class ClassWithReference2
+    {
+        public ClassWithULongField Reference = new ClassWithULongField();
     }
 
     public class ClassWithStringField

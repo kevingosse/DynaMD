@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using DynaMD.TestChildProcess;
 using Microsoft.Diagnostics.Runtime;
 using NUnit.Framework;
@@ -38,7 +38,7 @@ namespace DynaMD.Tests
 
             var runtime = _dataTarget.ClrVersions[0].CreateRuntime();
 
-            _heap = runtime.GetHeap();
+            _heap = runtime.Heap;
         }
 
         [TearDown]
@@ -85,13 +85,59 @@ namespace DynaMD.Tests
         }
 
         [Test]
-        public void Can_not_marshal_to_struct_with_array()
+        public void Can_marshal_to_class()
         {
-            var proxy = GetProxy<StructWithArray>();
+            var proxy = GetProxy<ClassWithReference2>();
 
-            Assert.Throws<InvalidCastException>(() => GC.KeepAlive((StructWithArray)proxy));
+            var value = (ClassWithReference2)proxy;
+
+            Assert.AreEqual(666, value.Reference.Value);
         }
 
+        [Test]
+        public void Can_marshal_to_class2()
+        {
+            var proxy = GetProxy<ClassWithReference>();
+
+            var value = (ClassWithReference)proxy;
+
+            Assert.AreEqual("OK", value.Reference.Value);
+        }
+
+        [Test]
+        public void Can_marshal_to_class3()
+        {
+            var proxy = GetProxy<ClassWithArrayOfClass>();
+
+            var value = (ClassWithArrayOfClass)proxy;
+
+            Assert.AreEqual("2", value.Values[2].Value);
+        }
+
+        [Test]
+        public void Can_marshal_to_class4()
+        {
+            var proxy = GetProxy<ClassWithListOfString>();
+
+            var value = (ClassWithListOfString)proxy;
+
+            Assert.AreEqual("World", value.List[1]);
+        }
+
+        [Test]
+        public void Can_marshal_to_class5()
+        {
+            var proxy = GetProxy<ConcurrentDictionary<int, string>>();
+
+            var value = (ConcurrentDictionary<int, string>)proxy;
+
+            Assert.IsTrue(value.ContainsKey(2));
+            Assert.AreEqual("two", value[2]);
+        }
+
+
+
+        
         [Test]
         public void Can_marshal_to_array_of_primitives()
         {
