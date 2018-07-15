@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using DynaMD;
+using System.Collections.Generic;
 using System.Text;
-using DynaMD;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Diagnostics.Runtime
@@ -68,20 +68,37 @@ namespace Microsoft.Diagnostics.Runtime
                 if (ch != '`')
                 {
                     if (ch == '[')
+                    {
                         ++num1;
+                    }
+
                     if (ch == ']')
+                    {
                         --num1;
+                    }
+
                     if (num1 < 0)
+                    {
                         return start + 1;
+                    }
+
                     if (ch == ',' && num1 == 0)
+                    {
                         return start;
+                    }
+
                     sb.Append(ch);
                 }
                 else
+                {
                     break;
+                }
             }
             if (start >= end)
+            {
                 return start;
+            }
+
             ++start;
             int num2 = 0;
             bool flag1;
@@ -93,13 +110,20 @@ namespace Microsoft.Diagnostics.Runtime
                 {
                     char ch = name[start];
                     if (ch >= '0' && ch <= '9')
+                    {
                         num3 = num3 * 10 + (int)ch - 48;
+                    }
                     else
+                    {
                         break;
+                    }
                 }
                 num2 += num3;
                 if (start >= end)
+                {
                     return start;
+                }
+
                 if (name[start] == '+')
                 {
                     for (; start < end && name[start] != '['; ++start)
@@ -113,7 +137,9 @@ namespace Microsoft.Diagnostics.Runtime
                         sb.Append(name[start]);
                     }
                     if (start >= end)
+                    {
                         return start;
+                    }
                 }
             }
             while (flag1);
@@ -124,7 +150,10 @@ namespace Microsoft.Diagnostics.Runtime
                 while (num2-- > 0)
                 {
                     if (start >= end)
+                    {
                         return start;
+                    }
+
                     bool flag2 = false;
                     if (name[start] == '[')
                     {
@@ -136,12 +165,21 @@ namespace Microsoft.Diagnostics.Runtime
                     {
                         ++start;
                         if (start >= end)
+                        {
                             return start;
+                        }
+
                         sb.Append('[');
                         for (; start < end && name[start] == ','; ++start)
+                        {
                             sb.Append(',');
+                        }
+
                         if (start >= end)
+                        {
                             return start;
+                        }
+
                         if (name[start] == ']')
                         {
                             sb.Append(']');
@@ -151,26 +189,40 @@ namespace Microsoft.Diagnostics.Runtime
                     if (flag2)
                     {
                         while (start < end && name[start] != ']')
+                        {
                             ++start;
+                        }
+
                         ++start;
                     }
                     if (num2 > 0)
                     {
                         if (start >= end)
+                        {
                             return start;
+                        }
+
                         sb.Append(',');
                         ++start;
                         if (start >= end)
+                        {
                             return start;
+                        }
+
                         if (name[start] == ' ')
+                        {
                             ++start;
+                        }
                     }
                 }
                 sb.Append('>');
                 ++start;
             }
             if (start + 1 >= end || (name[start] != '[' || name[start + 1] != ']'))
+            {
                 return start;
+            }
+
             sb.Append("[]");
             return start;
         }

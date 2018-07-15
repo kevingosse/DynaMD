@@ -158,6 +158,12 @@ namespace DynaMD
                 return true;
             }
 
+            if (binder.ReturnType == typeof(string) && Type.IsString)
+            {
+                result = Type.GetValue(_address);
+                return true;
+            }
+
             if (binder.ReturnType.FullName == Type.Name && IsBlittable(binder.ReturnType))
             {
                 if (binder.ReturnType.IsArray)

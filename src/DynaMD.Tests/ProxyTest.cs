@@ -1,11 +1,10 @@
-﻿using System;
+﻿using DynaMD.TestChildProcess;
+using Microsoft.Diagnostics.Runtime;
+using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using DynaMD.TestChildProcess;
-using Microsoft.Diagnostics.Runtime;
-using NUnit.Framework;
 
 namespace DynaMD.Tests
 {
@@ -72,6 +71,22 @@ namespace DynaMD.Tests
             var proxy = GetProxy<StructWithStringField>();
 
             Assert.AreEqual("OK", proxy.Value);
+        }
+
+        [Test]
+        public void Can_cast_to_string()
+        {
+            var proxy = GetProxy<ClassWithStringField>();
+
+            ClrType type = proxy.GetClrType();
+
+            var address = type.GetFieldByName("Value").GetAddress((ulong)proxy);
+
+            ulong stringAddress;
+
+            _heap.ReadPointer(address, out stringAddress);
+
+            Assert.AreEqual("OK", (string)_heap.GetProxy(stringAddress));
         }
 
         [Test]
