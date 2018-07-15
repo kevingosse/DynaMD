@@ -2,14 +2,13 @@
 <package >
   <metadata>
     <id>DynaMD</id>
-    <version>1.0.5.2</version>
+    <version>1.0.6.1</version>
     <title>DynaMD</title>
     <authors>Kevin Gosse, Christophe Nasarre</authors>
     <owners>KooKiz</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Helper objects to browse complex structures returned by ClrMD</description>
-    <releaseNotes>- Added marshalling of structs
-- Various bug fixes</releaseNotes>
+    <releaseNotes>- Allow casting proxies to string type</releaseNotes>
     <copyright>Copyright 2017</copyright>
     <tags>ClrMD WinDBG SOS</tags>
     <dependencies>
