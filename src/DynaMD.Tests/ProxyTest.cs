@@ -37,7 +37,7 @@ namespace DynaMD.Tests
 
             var runtime = _dataTarget.ClrVersions[0].CreateRuntime();
 
-            _heap = runtime.GetHeap();
+            _heap = runtime.Heap;
         }
 
         [TearDown]
