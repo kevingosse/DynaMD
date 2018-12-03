@@ -19,14 +19,15 @@
 
   <PropertyGroup>
     <PackageId>DynaMD</PackageId>
-    <PackageVersion>1.0.6.2</PackageVersion>
+    <PackageVersion>1.0.7</PackageVersion>
     <Title>DynaMD</Title>
     <Authors>Kevin Gosse, Christophe Nasarre</Authors>
     <Owners>KooKiz</Owners>
     <PackageProjectUrl>https://github.com/kevingosse/DynaMD</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/kevingosse/DynaMD</RepositoryUrl>
     <PackageLicenseUrl>https://github.com/kevingosse/DynaMD/blob/master/LICENSE</PackageLicenseUrl>
     <Description>Helper objects to browse complex structures returned by ClrMD</Description>
-    <PackageReleaseNotes>- Add missing dependency to nuget</PackageReleaseNotes>
+    <PackageReleaseNotes>Upgrade ClrMD / Return the address as hexadecimal when calling ToString on a proxy</PackageReleaseNotes>
     <Copyright>Copyright 2017-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
     <PackageTags>ClrMD WinDBG SOS</PackageTags>
     <PackageOutputPath>..\..\nugets</PackageOutputPath>
