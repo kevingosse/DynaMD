@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net452</TargetFramework>
+    <TargetFrameworks>net452;netstandard2.0</TargetFrameworks>
     <RootNamespace>DynaMD</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -19,7 +19,7 @@
 
   <PropertyGroup>
     <PackageId>DynaMD</PackageId>
-    <PackageVersion>1.0.7</PackageVersion>
+    <PackageVersion>1.0.7.1</PackageVersion>
     <Title>DynaMD</Title>
     <Authors>Kevin Gosse, Christophe Nasarre</Authors>
     <Owners>KooKiz</Owners>
@@ -27,7 +27,7 @@
     <RepositoryUrl>https://github.com/kevingosse/DynaMD</RepositoryUrl>
     <PackageLicenseUrl>https://github.com/kevingosse/DynaMD/blob/master/LICENSE</PackageLicenseUrl>
     <Description>Helper objects to browse complex structures returned by ClrMD</Description>
-    <PackageReleaseNotes>Upgrade ClrMD / Return the address as hexadecimal when calling ToString on a proxy</PackageReleaseNotes>
+    <PackageReleaseNotes>Add netstandard2.0 target</PackageReleaseNotes>
     <Copyright>Copyright 2017-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
     <PackageTags>ClrMD WinDBG SOS</PackageTags>
     <PackageOutputPath>..\..\nugets</PackageOutputPath>
