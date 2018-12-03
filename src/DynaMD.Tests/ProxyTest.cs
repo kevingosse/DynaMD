@@ -48,6 +48,16 @@ namespace DynaMD.Tests
         }
 
         [Test]
+        public void Returns_The_Hexadecimal_Address()
+        {
+            var proxy = GetProxy<ClassWithReference>();
+
+            var expected = ((ulong)proxy).ToString("x2");
+
+            Assert.AreEqual(expected, proxy.ToString());
+        }
+
+        [Test]
         public void Can_marshal_datetime()
         {
             var proxy = GetProxy<StructWithDate>().Date;

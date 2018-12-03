@@ -208,6 +208,8 @@ namespace DynaMD
             return true;
         }
 
+        public override string ToString() => _address.ToString("x2");
+
         private static bool IsReference(object result, ClrType type)
         {
             return result != null && !(result is string) && type.IsObjectReference;
