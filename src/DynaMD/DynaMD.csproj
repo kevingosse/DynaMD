@@ -14,20 +14,20 @@
 
   <ItemGroup>
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.0.3" />
   </ItemGroup>
 
   <PropertyGroup>
     <PackageId>DynaMD</PackageId>
-    <PackageVersion>1.0.7.1</PackageVersion>
+    <PackageVersion>1.0.7.2</PackageVersion>
     <Title>DynaMD</Title>
-    <Authors>Kevin Gosse, Christophe Nasarre</Authors>
+    <Authors>Kevin Gosse</Authors>
     <Owners>KooKiz</Owners>
     <PackageProjectUrl>https://github.com/kevingosse/DynaMD</PackageProjectUrl>
     <RepositoryUrl>https://github.com/kevingosse/DynaMD</RepositoryUrl>
     <PackageLicenseUrl>https://github.com/kevingosse/DynaMD/blob/master/LICENSE</PackageLicenseUrl>
     <Description>Helper objects to browse complex structures returned by ClrMD</Description>
-    <PackageReleaseNotes>Add netstandard2.0 target</PackageReleaseNotes>
+    <PackageReleaseNotes>Update version of ClrMD dependency</PackageReleaseNotes>
     <Copyright>Copyright 2017-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
     <PackageTags>ClrMD WinDBG SOS</PackageTags>
     <PackageOutputPath>..\..\nugets</PackageOutputPath>
