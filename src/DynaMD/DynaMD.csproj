@@ -14,12 +14,12 @@
 
   <ItemGroup>
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.5.2" />
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="1.*" />
   </ItemGroup>
 
   <PropertyGroup>
     <PackageId>DynaMD</PackageId>
-    <PackageVersion>1.0.7.2</PackageVersion>
+    <PackageVersion>1.0.7.3</PackageVersion>
     <Title>DynaMD</Title>
     <Authors>Kevin Gosse</Authors>
     <Owners>KooKiz</Owners>
