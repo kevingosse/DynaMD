@@ -110,11 +110,13 @@ namespace DynaMD.Tests
         }
 
         [Test]
-        public void Can_not_marshal_to_struct_with_array()
+        public void Can_marshal_to_struct_with_array()
         {
             var proxy = GetProxy<StructWithArray>();
 
-            Assert.Throws<InvalidCastException>(() => GC.KeepAlive((StructWithArray)proxy));
+            var value = (StructWithArray)proxy;
+
+            Assert.AreEqual(new[] { 1, 2, 3 }, value.Values);
         }
 
         [Test]
@@ -125,6 +127,27 @@ namespace DynaMD.Tests
             var value = (int[])proxy.Values;
 
             Assert.AreEqual(Enumerable.Range(0, 10).Select(i => 10 - i).ToArray(), value);
+        }
+
+        [Test]
+        public void Can_marshal_to_class_with_reference_cycle()
+        {
+            var proxy = GetProxy<ClassWithSelfReference>();
+
+            var value = (ClassWithSelfReference)proxy;
+
+            Assert.IsTrue(object.ReferenceEquals(value, value.Reference));
+        }
+
+        [Test]
+        public void Can_marshal_to_class_with_abstract_reference()
+        {
+            var proxy = GetProxy<GenericClass<BaseGenericClass<Implementation>>>();
+
+            var value = (GenericClass<BaseGenericClass<Implementation>>)proxy;
+
+            Assert.IsInstanceOf<Implementation>(value.Reference);
+            Assert.AreEqual(101, value.Reference.Reference.Value);
         }
 
         [Test]
@@ -159,12 +182,25 @@ namespace DynaMD.Tests
             Assert.IsNull(segment);
         }
 
+        [TestCase("System.Collections.Generic.Dictionary+Entry<System.String,System.AppContext+SwitchValueState>[]")]
+        [TestCase("System.Collections.Concurrent.ConcurrentDictionary<System.Int32,System.String>")]
+        [TestCase("System.String")]
+        [TestCase("System.String[]")]
+        public void Convert_to_clr_type_name(string clrmdTypeName)
+        {
+            var clrTypeName = Extensions.ToClrTypeName(clrmdTypeName);
+
+            var type = Type.GetType(clrTypeName);
+
+            Assert.IsNotNull(type);
+        }
+
         [Test]
         public void Should_not_fix_good_names()
         {
             var typeName = "System.Collections.Concurrent.ConcurrentDictionary<System.Int32,System.String>";
 
-            var fixedName = Extensions.FixTypeName(typeName);
+            var fixedName = Extensions.ToClrMDTypeName(typeName);
 
             Assert.AreEqual(typeName, fixedName);
         }

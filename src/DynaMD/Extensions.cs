@@ -1,6 +1,8 @@
 ﻿using DynaMD;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Diagnostics.Runtime
@@ -24,7 +26,7 @@ namespace Microsoft.Diagnostics.Runtime
 
         public static IEnumerable<dynamic> GetProxies(this ClrHeap heap, string typeName)
         {
-            typeName = FixTypeName(typeName);
+            typeName = ToClrMDTypeName(typeName);
 
             foreach (var address in heap.EnumerateObjectAddresses())
             {
@@ -42,16 +44,84 @@ namespace Microsoft.Diagnostics.Runtime
             return heap.GetProxy(clrObject.Address);
         }
 
-        public static string FixTypeName(string typeName)
+        public static string ToClrTypeName(string clrMdTypeName)
         {
-            if (!typeName.Contains("`"))
+            var match = Regex.Match(clrMdTypeName, "(?<type>[^<>]+)<(?<generics>.+)>(?<suffix>[\\[\\]]*)");
+
+            if (!match.Success)
             {
-                return typeName;
+                return clrMdTypeName;
+            }
+
+            var generics = match.Groups["generics"].Value;
+            var type = match.Groups["type"].Value;
+            var suffix = match.Groups["suffix"].Value;
+
+            // Need to find the number of generic arguments, without drilling into nested arguments
+            int level = 0;
+
+            var genericTypes = new List<string>();
+
+            var currentGenericType = new StringBuilder();
+
+            for (int i = 0; i < generics.Length; i++)
+            {
+                var ch = generics[i];
+
+                if (ch == ',')
+                {
+                    if (level == 0)
+                    {
+                        genericTypes.Add(currentGenericType.ToString());
+                        currentGenericType.Clear();
+                        continue;
+                    }
+                }
+
+                if (ch == '<')
+                {
+                    level++;
+                }
+
+                if (ch == '>')
+                {
+                    level--;
+                }
+
+                currentGenericType.Append(ch);
+            }
+
+            if (currentGenericType.Length > 0)
+            {
+                genericTypes.Add(currentGenericType.ToString());
+            }
+
+            if (genericTypes.Count > 0)
+            {
+                var index = type.IndexOf('+');
+
+                if (index == -1)
+                {
+                    index = type.Length;
+                }
+
+                type = type.Insert(index, $"`{genericTypes.Count}");
+                type += $"[{string.Join(",", genericTypes.Select(t => $"[{ToClrTypeName(t)}]"))}]";
+            }
+
+            return type + suffix;
+        }
+
+        public static string ToClrMDTypeName(string clrTypeName)
+        {
+            if (!clrTypeName.Contains("`"))
+            {
+                return clrTypeName;
             }
 
             var sb = new StringBuilder();
 
-            FixGenericsWorker(typeName, 0, typeName.Length, sb);
+            FixGenericsWorker(clrTypeName, 0, clrTypeName.Length, sb);
 
             return sb.ToString();
         }

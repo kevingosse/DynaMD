@@ -26,9 +26,17 @@ namespace DynaMD.TestChildProcess
                 new StructWithStructWithStructField(666),
                 new ClassWithEmptyArray(),
                 new StructWithDate(),
-                new StructWithArray(),
+                new StructWithArray(1, 2, 3),
                 CreateDictionary(),
-                new ConcurrentQueue<int>()
+                new ConcurrentQueue<int>(),
+                new ClassWithSelfReference(),
+                new GenericClass<BaseGenericClass<Implementation>>
+                {
+                    Reference = new GenericClass<Implementation>
+                    {
+                        Reference = new Implementation { Value = 101 }
+                    }
+                }
             };
 
             Console.WriteLine(Ready);
@@ -55,6 +63,11 @@ namespace DynaMD.TestChildProcess
     public struct StructWithArray
     {
         public int[] Values;
+
+        public StructWithArray(params int[] values)
+        {
+            Values = values;
+        }
     }
 
     public class ClassWithArray
@@ -82,6 +95,34 @@ namespace DynaMD.TestChildProcess
     public class ClassWithReference
     {
         public ClassWithStringField Reference = new ClassWithStringField();
+    }
+
+    public class ClassWithSelfReference
+    {
+        public ClassWithSelfReference Reference;
+
+        public ClassWithSelfReference()
+        {
+            Reference = this;
+        }
+    }
+
+    public abstract class BaseGenericClass<T>
+    {
+        public T Reference;
+    }
+
+    public class GenericClass<T> : BaseGenericClass<T>
+    {
+    }
+
+    public abstract class AbstractClass
+    {
+        public int Value { get; set; }
+    }
+
+    public class Implementation : AbstractClass
+    {
     }
 
     public class ClassWithStringField

@@ -5,6 +5,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using Microsoft.Diagnostics.Runtime;
 
 namespace DynaMD
@@ -164,15 +165,9 @@ namespace DynaMD
                 return true;
             }
 
-            if (binder.ReturnType.FullName == Type.Name && IsBlittable(binder.ReturnType))
+            if (Extensions.ToClrMDTypeName(binder.ReturnType.FullName) == Type.Name)
             {
-                if (binder.ReturnType.IsArray)
-                {
-                    result = MarshalToArray(binder.ReturnType, Type);
-                    return true;
-                }
-
-                result = MarshalToStruct(AddressWithoutHeader, binder.ReturnType, Type);
+                result = MarshalToObject(_address, binder.ReturnType, Type, _interior);
                 return true;
             }
 
@@ -253,9 +248,86 @@ namespace DynaMD
             return new DynamicProxy(_heap, Type.GetArrayElementAddress(_address, index), Type.ComponentType);
         }
 
-        private object MarshalToStruct(ulong address, Type destinationType, ClrType destinationClrType)
+        private object MarshalToClass(ulong address, Type destinationType, ClrType destinationClrType)
+        {
+            var result = FormatterServices.GetUninitializedObject(destinationType);
+
+            _cache.Add(address, result);
+
+            foreach (var field in destinationType.GetFields(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                var clrField = destinationClrType.GetFieldByName(field.Name);
+                var fieldAddress = clrField.GetAddress(address);
+
+                object value;
+
+                if (field.FieldType.IsArray)
+                {
+                    _heap.ReadPointer(fieldAddress, out fieldAddress);
+
+                    value = MarshalToArray(fieldAddress, field.FieldType, clrField.Type);
+                }
+                else if (IsBlittable(field.FieldType))
+                {
+                    var fieldType = _heap.GetTypeByName(Extensions.ToClrMDTypeName(field.FieldType.FullName));
+
+
+                    value = MarshalToStruct(fieldAddress, field.FieldType, fieldType, true);
+                    //value = MarshalToStruct(fieldAddress, field.FieldType, clrField.Type, true);
+                }
+                else if (field.FieldType == typeof(string))
+                {
+                    value = clrField.GetValue(fieldAddress, true);
+                }
+                else
+                {
+                    _heap.ReadPointer(fieldAddress, out fieldAddress);
+
+                    if (fieldAddress != 0) // TODO   && !clrField.Type.IsAbstract
+                    {
+                        var fieldType = _heap.GetObjectType(fieldAddress);
+                        
+                        if (!_cache.TryGetValue(fieldAddress, out value))
+                        {
+                            value = MarshalToClass(fieldAddress, field.FieldType, clrField.Type);
+                        }
+                    }
+                    else
+                        value = null;
+                }
+
+                field.SetValue(result, value);
+            }
+
+            return result;
+        }
+
+        private Dictionary<ulong, object> _cache = new Dictionary<ulong, object>();
+
+        private object MarshalToObject(ulong address, Type destinationType, ClrType destinationClrType, bool interior)
+        {
+            if (destinationType.IsArray)
+            {
+                return MarshalToArray(address, destinationType, destinationClrType);
+            }
+
+            if (IsBlittable(destinationType))
+            {
+                return MarshalToStruct(address, destinationType, destinationClrType, interior);
+            }
+
+            return this.MarshalToClass(address, destinationType, destinationClrType);
+        }
+
+        private object MarshalToStruct(ulong address, Type destinationType, ClrType destinationClrType, bool interior)
         {
             var buffer = new byte[destinationClrType.BaseSize];
+
+            if (!interior)
+            {
+                address += (ulong)_heap.PointerSize;
+            }
 
             _heap.ReadMemory(address, buffer, 0, buffer.Length);
 
@@ -264,9 +336,16 @@ namespace DynaMD
             return method.Invoke(null, new object[] { buffer });
         }
 
-        private object MarshalToArray(Type arrayType, ClrType arrayClrType)
+        private object MarshalToArray(ulong address, Type arrayType, ClrType arrayClrType)
         {
-            var length = Type.GetArrayLength(_address);
+            // Evaluate the type twice to bypass a bug in ClrMD
+            if (arrayClrType.Name.StartsWith("System.__Canon"))
+            {
+                arrayClrType = _heap.GetTypeByName(Extensions.ToClrMDTypeName(arrayType.FullName));
+                arrayClrType = _heap.GetTypeByName(Extensions.ToClrMDTypeName(arrayType.FullName));
+            }
+
+            var length = arrayClrType.GetArrayLength(address);
 
             var array = (Array)Activator.CreateInstance(arrayType, length);
 
@@ -280,8 +359,30 @@ namespace DynaMD
 
             for (int i = 0; i < length; i++)
             {
-                var elementAddress = Type.GetArrayElementAddress(_address, i);
-                array.SetValue(MarshalToStruct(elementAddress, elementType, elementClrType), i);
+                object value;
+
+                if (elementClrType.IsObjectReference)
+                {
+                    value = arrayClrType.GetArrayElementValue(address, i);
+
+                    if (!elementClrType.IsString)
+                    {
+                        if ((ulong)value == 0)
+                        {
+                            continue;
+                        }
+
+                        value = MarshalToObject((ulong)value, elementType, elementClrType, true);
+                    }
+                }
+                else
+                {
+                    var elementAddress = arrayClrType.GetArrayElementAddress(address, i);
+
+                    value = MarshalToObject(elementAddress, elementType, elementClrType, true);
+                }
+
+                array.SetValue(value, i);
             }
 
             return array;
