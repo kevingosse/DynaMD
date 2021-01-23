@@ -14,7 +14,9 @@ namespace Microsoft.Diagnostics.Runtime
                 return null;
             }
 
-            return new DynamicProxy(heap, address);
+            var type = heap.GetObjectType(address);
+
+            return new DynamicProxy(address, type);
         }
 
         public static IEnumerable<dynamic> GetProxies<T>(this ClrHeap heap)
@@ -26,20 +28,23 @@ namespace Microsoft.Diagnostics.Runtime
         {
             typeName = FixTypeName(typeName);
 
-            foreach (var address in heap.EnumerateObjectAddresses())
+            foreach (var instance in heap.EnumerateObjects())
             {
-                if (heap.GetObjectType(address)?.Name == typeName)
+                if (instance.Type.Name == typeName)
                 {
-                    yield return heap.GetProxy(address);
+                    yield return instance.AsDynamic();
                 }
             }
         }
 
-        public static dynamic AsDynamic(this ClrObject clrObject)
+        public static dynamic AsDynamic<T>(this T clrObject) where T : IAddressableTypedEntity
         {
-            var heap = clrObject.Type.Heap;
+            if (clrObject.Address == 0)
+            {
+                return null;
+            }
 
-            return heap.GetProxy(clrObject.Address);
+            return new DynamicProxy(clrObject.Address, clrObject.Type);
         }
 
         public static string FixTypeName(string typeName)
@@ -172,7 +177,7 @@ namespace Microsoft.Diagnostics.Runtime
                         sb.Append('[');
                         for (; start < end && name[start] == ','; ++start)
                         {
-                            sb.Append(',');
+                            sb.Append(", ");
                         }
 
                         if (start >= end)
@@ -202,7 +207,7 @@ namespace Microsoft.Diagnostics.Runtime
                             return start;
                         }
 
-                        sb.Append(',');
+                        sb.Append(", ");
                         ++start;
                         if (start >= end)
                         {

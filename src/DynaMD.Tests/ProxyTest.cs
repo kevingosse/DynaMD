@@ -33,7 +33,7 @@ namespace DynaMD.Tests
                 throw new Exception("Unexpected output from child process: " + line);
             }
 
-            _dataTarget = DataTarget.AttachToProcess(_childProcess.Id, 5000);
+            _dataTarget = DataTarget.AttachToProcess(_childProcess.Id, true);
 
             var runtime = _dataTarget.ClrVersions[0].CreateRuntime();
 
@@ -72,7 +72,7 @@ namespace DynaMD.Tests
         {
             var proxy = GetProxy<ClassWithReference>();
 
-            Assert.AreEqual("OK", proxy.Reference.Value);
+            Assert.AreEqual("OK", (string)proxy.Reference.Value);
         }
 
         [Test]
@@ -80,7 +80,7 @@ namespace DynaMD.Tests
         {
             var proxy = GetProxy<StructWithStringField>();
 
-            Assert.AreEqual("OK", proxy.Value);
+            Assert.AreEqual("OK", (string)proxy.Value);
         }
 
         [Test]
@@ -90,11 +90,27 @@ namespace DynaMD.Tests
 
             ClrType type = proxy.GetClrType();
 
-            var address = type.GetFieldByName("Value").GetAddress((ulong)proxy);
+            ulong stringAddress = 0;
 
-            ulong stringAddress;
+            // TODO: There may be a faster way :/
+            foreach (var element in _heap.EnumerateObjects())
+            {
+                if (element.Type.IsString && element.AsString() == "OK")
+                {
+                    stringAddress = element.Address;
+                    break;
+                }
+            }
 
-            _heap.ReadPointer(address, out stringAddress);
+            var clrObject = new ClrObject((ulong)proxy, type);
+
+            //var address = type.GetFieldByName("Value").GetAddress((ulong)proxy);
+
+            //ulong stringAddress;
+
+            //_heap.
+
+            //_heap.ReadPointer(address, out stringAddress);
 
             Assert.AreEqual("OK", (string)_heap.GetProxy(stringAddress));
         }
@@ -146,7 +162,7 @@ namespace DynaMD.Tests
 
             var value = bucket.m_value;
 
-            Assert.IsInstanceOf<string>(value);
+            Assert.AreEqual("one", (string)value);
         }
 
         [Test]
@@ -257,7 +273,7 @@ namespace DynaMD.Tests
         {
             var proxy = GetProxy<ClassWithArrayOfClass>();
 
-            Assert.AreEqual("2", proxy.Values[2].Value);
+            Assert.AreEqual("2", (string)proxy.Values[2].Value);
         }
 
         [Test]
@@ -288,12 +304,10 @@ namespace DynaMD.Tests
         [Test]
         public void Can_read_the_address_of_an_object()
         {
-            var containerAddress = _heap.EnumerateObjectAddresses()
-                .First(u => _heap.GetObjectType(u).Name == typeof(ClassWithReference).FullName);
+            var containerAddress = _heap.EnumerateObjects()
+                .First(u => u.Type.Name == typeof(ClassWithReference).FullName);
 
-            var type = _heap.GetObjectType(containerAddress);
-            var field = type.GetFieldByName("Reference");
-            var expected = field.GetValue(containerAddress);
+            var expected = _heap.GetObject(containerAddress).ReadObjectField("Reference").Address;
 
             var proxy = GetProxy<ClassWithReference>();
 
@@ -303,8 +317,8 @@ namespace DynaMD.Tests
         [Test]
         public void Can_read_the_type_of_an_object()
         {
-            var containerAddress = _heap.EnumerateObjectAddresses()
-                .First(u => _heap.GetObjectType(u).Name == typeof(ClassWithReference).FullName);
+            var containerAddress = _heap.EnumerateObjects()
+                .First(u => u.Type.Name == typeof(ClassWithReference).FullName);
 
             var expectedType = _heap.GetObjectType(containerAddress);
 
@@ -339,7 +353,7 @@ namespace DynaMD.Tests
 
             var proxy = obj.AsDynamic();
 
-            Assert.AreEqual("OK", proxy.Reference.Value);
+            Assert.AreEqual("OK", (string)proxy.Reference.Value);
         }
 
         private dynamic GetProxy<T>()

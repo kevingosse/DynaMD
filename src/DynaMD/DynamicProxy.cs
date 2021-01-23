@@ -11,45 +11,33 @@ namespace DynaMD
 {
     internal class DynamicProxy : DynamicObject
     {
-        private readonly ClrHeap _heap;
-        private readonly ulong _address;
-
         private readonly bool _interior;
-        private ClrType _type;
+        private readonly ulong _address;
+        private readonly ClrType _type;
 
-        public DynamicProxy(ClrHeap heap, ulong address)
+        public DynamicProxy(ulong address, ClrType type)
+            : this(address, type, false)
         {
-            _heap = heap;
+        }
+
+        private DynamicProxy(ulong address, ClrType type, bool interior)
+        {
             _address = address;
+            _type = type;
+            _interior = interior;
         }
 
-        private DynamicProxy(ClrHeap heap, ulong address, ClrType overrideType)
-            : this(heap, address)
-        {
-            _type = overrideType;
-            _interior = true;
-        }
+        protected ClrType Type => _type;
 
-        protected ClrType Type
-        {
-            get
-            {
-                if (_type == null)
-                {
-                    _type = _heap.GetObjectType(_address);
-                }
+        protected ClrObject ClrObject => new ClrObject(_address, Type);
 
-                return _type;
-            }
-        }
-
-        protected ulong AddressWithoutHeader => _interior ? _address : _address + (ulong)_heap.PointerSize;
+        protected ulong AddressWithoutHeader => _interior ? _address : _address + (ulong)_type.Heap.Runtime.DataTarget.DataReader.PointerSize;
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             if (binder.Name == "Length" && Type.IsArray)
             {
-                result = Type.GetArrayLength(_address);
+                result = ClrObject.AsArray().Length;
                 return true;
             }
 
@@ -68,35 +56,25 @@ namespace DynaMD
                 }
             }
 
-            if (!field.HasSimpleValue)
+            if (field.Type.IsValueType)
             {
-                result = LinkToStruct(field);
+                var value = field.ReadStruct(_address, _interior);
 
-                return true;
+                result = ConvertIfPrimitive(value);
+
             }
-
-            result = field.GetValue(_address, _interior);
-
-            if (IsReference(result, field.Type))
+            else
             {
-                var fieldAddress = (ulong)result;
+                var value = field.ReadObject(_address, _interior);
 
-                // Sometimes, ClrMD isn't capable of resolving the property type using the field
-                // Try again using directly the address, in case we fetch something different
-                if (fieldAddress != 0)
+                if (value.Address == 0)
                 {
-                    var type = _heap.GetObjectType(fieldAddress);
-
-                    var alternativeValue = type.GetValue(fieldAddress);
-
-                    if (!(alternativeValue is ulong))
-                    {
-                        result = alternativeValue;
-                        return true;
-                    }
+                    result = null;
                 }
-
-                result = GetProxy(_heap, fieldAddress);
+                else
+                {
+                    result = value.AsDynamic();
+                }
             }
 
             return true;
@@ -160,7 +138,7 @@ namespace DynaMD
 
             if (binder.ReturnType == typeof(string) && Type.IsString)
             {
-                result = Type.GetValue(_address);
+                result = ClrObject.AsString();
                 return true;
             }
 
@@ -168,21 +146,35 @@ namespace DynaMD
             {
                 if (binder.ReturnType.IsArray)
                 {
-                    result = MarshalToArray(binder.ReturnType, Type);
+                    var clrArray = ClrObject.AsArray();
+
+                    if (clrArray.Length == 0)
+                    {
+                        result = Array.CreateInstance(binder.ReturnType.GetElementType(), 0);
+                    }
+                    else
+                    {
+                        var methodInfo = clrArray.GetType().GetMethod("ReadValues").MakeGenericMethod(binder.ReturnType.GetElementType());
+                        result = methodInfo.Invoke(clrArray, new object[] { 0, clrArray.Length });
+                    }
+
                     return true;
                 }
 
-                result = MarshalToStruct(AddressWithoutHeader, binder.ReturnType, Type);
+                result = Read(AddressWithoutHeader, binder.ReturnType);
+
                 return true;
             }
 
             IEnumerable<dynamic> Enumerate()
             {
-                var length = Type.GetArrayLength(_address);
+                var array = ClrObject.AsArray();
+
+                var length = array.Length;
 
                 for (int i = 0; i < length; i++)
                 {
-                    yield return GetElementAt(i);
+                    yield return GetElementAt(array, i);
                 }
             }
 
@@ -204,7 +196,7 @@ namespace DynaMD
 
             var index = (int)indexes[0];
 
-            result = GetElementAt(index);
+            result = GetElementAt(new ClrArray(_address, Type), index);
             return true;
         }
 
@@ -217,7 +209,7 @@ namespace DynaMD
 
         private static DynamicProxy GetProxy(ClrHeap heap, ulong address)
         {
-            return address == 0 ? null : new DynamicProxy(heap, address);
+            return address == 0 ? null : heap.GetProxy(address);
         }
 
         // ReSharper disable once UnusedMember.Local - Used through reflection
@@ -229,62 +221,32 @@ namespace DynaMD
             }
         }
 
-        private DynamicProxy LinkToStruct(ClrField field)
+        private object ConvertIfPrimitive(ClrValueType value)
         {
-            var childAddress = AddressWithoutHeader + (ulong)field.Offset;
-
-            return new DynamicProxy(_heap, childAddress, field.Type);
-        }
-
-        private object GetElementAt(int index)
-        {
-            if (Type.ComponentType.HasSimpleValue)
+            if (value.Type.IsPrimitive)
             {
-                var result = Type.GetArrayElementValue(_address, index);
-
-                if (IsReference(result, Type.ComponentType))
-                {
-                    return GetProxy(_heap, (ulong)result);
-                }
-
-                return Type.GetArrayElementValue(_address, index);
+                var realType = System.Type.GetType(value.Type.Name);
+                return Read(value.Address, realType);
             }
 
-            return new DynamicProxy(_heap, Type.GetArrayElementAddress(_address, index), Type.ComponentType);
+            return new DynamicProxy(value.Address, value.Type, true);
         }
 
-        private object MarshalToStruct(ulong address, Type destinationType, ClrType destinationClrType)
+        private object Read(ulong address, Type type)
         {
-            var buffer = new byte[destinationClrType.BaseSize];
+            var m = typeof(IMemoryReader).GetMethod("Read", new[] { typeof(ulong) }).MakeGenericMethod(type);
 
-            _heap.ReadMemory(address, buffer, 0, buffer.Length);
-
-            var method = GetType().GetMethods(BindingFlags.NonPublic | BindingFlags.Static).First(m => m.Name == "Read").MakeGenericMethod(destinationType);
-
-            return method.Invoke(null, new object[] { buffer });
+            return m.Invoke(Type.ClrObjectHelpers.DataReader, new object[] { address });
         }
 
-        private object MarshalToArray(Type arrayType, ClrType arrayClrType)
+        private object GetElementAt(ClrArray array, int index)
         {
-            var length = Type.GetArrayLength(_address);
-
-            var array = (Array)Activator.CreateInstance(arrayType, length);
-
-            var elementType = arrayType.GetElementType();
-            var elementClrType = arrayClrType.ComponentType;
-
-            if (length == 0)
+            if (array.Type.ComponentType.IsValueType)
             {
-                return array;
+                return ConvertIfPrimitive(array.GetStructValue(index));
             }
 
-            for (int i = 0; i < length; i++)
-            {
-                var elementAddress = Type.GetArrayElementAddress(_address, i);
-                array.SetValue(MarshalToStruct(elementAddress, elementType, elementClrType), i);
-            }
-
-            return array;
+            return array.GetObjectValue(index).AsDynamic();
         }
     }
 }
