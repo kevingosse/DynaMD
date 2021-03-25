@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.161401" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.217201" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
     <PackageReference Include="NUnit" Version="3.12.0" PrivateAssets="All" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
