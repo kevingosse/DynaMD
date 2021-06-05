@@ -1,9 +1,14 @@
 # DynaMD
-Helper objects to browse complex structures returned ClrMD
 
-The library leverages the **dynamic** keyword to give easy access to memory structures.
+## About
 
-Given an address and a ClrMD **ClrHeap** instance, you can get a dynamic proxy by calling GetProxy:
+Helper objects to browse complex structures returned by [ClrMD](https://www.nuget.org/packages/Microsoft.Diagnostics.Runtime/). This is useful to quickly write scripts to analyze memory dumps.
+
+The library leverages the `dynamic` keyword to give direct access to memory structures.
+
+## How to use
+
+Given an address and a ClrMD `ClrHeap` instance, you can get a dynamic proxy by calling `GetProxy`:
 
 ```C#
 var proxy = heap.GetProxy(0x00001000);
@@ -25,6 +30,23 @@ From there, you can access any field like you would with a "real" object:
 Console.WriteLine(proxy.Value);
 Console.WriteLine((string)proxy.Child.Name);
 Console.WriteLine(proxy.Description.Size.Width * proxy.Description.Size.Height);
+```
+
+Only fields are supported, but automatic properties are translated:
+
+```C#
+class SomeType
+{
+    private int _backingField;
+    public int Field1 => _backingField;
+    public int Field2 { get; }
+}
+
+var proxy = heap.GetProxies<SomeType>().First();
+
+var value1 = proxy._backingField; // Calling proxy.Field1 is not supported
+var value2 = proxy.Field2; // Automatically translated to <Field2>k__BackingField
+
 ```
 
 [Primitive types](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types) are automatically converted:
