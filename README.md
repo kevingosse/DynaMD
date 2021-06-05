@@ -9,27 +9,96 @@ Given an address and a ClrMD **ClrHeap** instance, you can get a dynamic proxy b
 var proxy = heap.GetProxy(0x00001000);
 ```
 
+Or all the instances of a given type:
+
+```C#
+// Using generics:
+var proxies1 = heap.GetProxies<string>();
+
+// Or writing the type name (useful if you don't reference it):
+var proxies2 = heap.GetProxies("System.String");
+```
+
 From there, you can access any field like you would with a "real" object:
 
 ```C#
 Console.WriteLine(proxy.Value);
-Console.WriteLine(proxy.Child.Name);
+Console.WriteLine((string)proxy.Child.Name);
 Console.WriteLine(proxy.Description.Size.Width * proxy.Description.Size.Height);
 ```
 
-You can also enumerate the contents of arrays:
+[Primitive types](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types) are automatically converted:
 
 ```C#
-foreach (var value in proxy.Values)
+class SomeType
+{
+    public int IntValue;
+    public double DoubleValue;
+}
+
+var proxy = heap.GetProxies<SomeType>().First();
+
+Console.WriteLine(proxy.IntValue.GetType()); // System.Int32
+Console.WriteLine(proxy.DoubleValue.GetType()); // System.Double
+
+```
+
+Non-primitive proxies can be cast to string or [blittable structs](https://docs.microsoft.com/en-us/dotnet/framework/interop/blittable-and-non-blittable-types):
+
+```C#
+struct BlittableStruct
+{
+    public int Value;
+}
+
+class SomeType
+{
+    public BlittableStruct StructValue;
+    public DateTime DateTimeValue;
+    public string StringValue;
+}
+
+var proxy = heap.GetProxies<SomeType>().First();
+
+BlittableStruct structValue = (BlittableStruct)proxy.StructValue;
+DateTime dateTimeValue = (DateTime)proxy.DateTimeValue;
+string stringValue = (string)proxy.stringValue;
+
+```
+
+You can also enumerate the contents of arrays, get the length, or use an indexer:
+
+```C#
+
+class SomeType
+{
+    public int[] ArrayValue;
+}
+
+var proxy = heap.GetProxies<SomeType>().First();
+
+Console.WriteLine("Length: " + proxy.ArrayValue.Length);
+Console.WriteLine("First element: " + proxy.ArrayValue[0]);
+
+foreach (var value in proxy.ArrayValue)
 {
     Console.WriteLine(value);
 }
 ```
 
-To retrieve the address of a proxified object, explicitely cast it to ulong:
+To retrieve the address of a proxified object, explicitely cast it to ulong. Also, calling `.ToString()` on a proxy will return the address encoded in hexadecimal:
 
 ```C#
-var address = (ulong)proxy.Child;
+var proxy = heap.GetProxy(0x1000);
+var address = (ulong)proxy;
+Console.WriteLine("{0:x2}", address); // 0x1000
+Console.WriteLine(proxy); // 0x1000
 ```
 
-Check [the unit tests](https://github.com/KooKiz/DynaMD/blob/master/src/DynaMD.Tests/ProxyTest.cs) for more examples.
+To retrieve the instance of ClrType, call `GetClrType()`:
+
+```C#
+ClrType type = proxy.GetClrType();
+```
+
+Check [the unit tests](https://github.com/kevingosse/DynaMD/blob/master/src/DynaMD.Tests/ProxyTest.cs) for more examples.
