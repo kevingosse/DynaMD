@@ -1,34 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net471;netstandard2.0;netcoreapp3.1</TargetFrameworks>
-    <RootNamespace>DynaMD</RootNamespace>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net471;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+		<RootNamespace>DynaMD</RootNamespace>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Platforms>AnyCPU;x64</Platforms>
+	</PropertyGroup>
 
-  <ItemGroup>
-	  <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
-	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
-    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.217201" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
+		<PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.217201" />
+	</ItemGroup>
 
-  <PropertyGroup>
-    <PackageId>DynaMD</PackageId>
-    <PackageVersion>1.0.8</PackageVersion>
-    <Title>DynaMD</Title>
-    <Authors>Kevin Gosse</Authors>
-    <Owners>KooKiz</Owners>
-    <PackageProjectUrl>https://github.com/kevingosse/DynaMD</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/kevingosse/DynaMD</RepositoryUrl>
-    <PackageLicenseUrl>https://github.com/kevingosse/DynaMD/blob/master/LICENSE</PackageLicenseUrl>
-    <Description>Helper objects to browse complex structures returned by ClrMD</Description>
-    <PackageReleaseNotes>Upgrade to ClrMD 2</PackageReleaseNotes>
-    <Copyright>Copyright 2017-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
-    <PackageTags>ClrMD WinDBG SOS</PackageTags>
-    <PackageOutputPath>..\..\nugets</PackageOutputPath>
-  </PropertyGroup>
-
+	<PropertyGroup>
+		<PackageId>DynaMD</PackageId>
+		<PackageVersion>1.0.9.1</PackageVersion>
+		<Title>DynaMD</Title>
+		<Authors>Kevin Gosse</Authors>
+		<Owners>KooKiz</Owners>
+		<PackageProjectUrl>https://github.com/kevingosse/DynaMD</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/kevingosse/DynaMD</RepositoryUrl>
+		<PackageLicenseUrl>https://github.com/kevingosse/DynaMD/blob/master/LICENSE</PackageLicenseUrl>
+		<Description>Helper objects to browse complex structures returned by ClrMD</Description>
+		<PackageReleaseNotes>Added Readme.md</PackageReleaseNotes>
+		<Copyright>Copyright 2017-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
+		<PackageTags>ClrMD WinDBG SOS</PackageTags>
+		<PackageOutputPath>..\..\nugets</PackageOutputPath>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+	</ItemGroup>
 </Project>
