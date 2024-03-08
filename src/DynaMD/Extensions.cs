@@ -1,6 +1,7 @@
 ﻿using DynaMD;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.Diagnostics.Runtime.Interfaces;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Diagnostics.Runtime
@@ -37,7 +38,7 @@ namespace Microsoft.Diagnostics.Runtime
             }
         }
 
-        public static dynamic AsDynamic<T>(this T clrObject) where T : IAddressableTypedEntity
+        public static dynamic AsDynamic(this ClrObject clrObject)
         {
             if (clrObject.Address == 0)
             {

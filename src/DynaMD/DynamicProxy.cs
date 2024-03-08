@@ -196,7 +196,7 @@ namespace DynaMD
 
             var index = (int)indexes[0];
 
-            result = GetElementAt(new ClrArray(_address, Type), index);
+            result = GetElementAt(new ClrObject(_address, Type).AsArray(), index);
             return true;
         }
 
@@ -234,9 +234,12 @@ namespace DynaMD
 
         private object Read(ulong address, Type type)
         {
-            var m = typeof(IMemoryReader).GetMethod("Read", new[] { typeof(ulong) }).MakeGenericMethod(type);
+            // Module.DataReader.Read<T>(address, out obj) 
+            var dataReader = ClrObject.Type.Heap.Runtime.DataTarget.DataReader;
 
-            return m.Invoke(Type.ClrObjectHelpers.DataReader, new object[] { address });
+            var m = typeof(IMemoryReader).GetMethod("Read", new[] { typeof(ulong) }).MakeGenericMethod(type);
+            
+            return m.Invoke(dataReader, new object[] { address });
         }
 
         private object GetElementAt(ClrArray array, int index)
