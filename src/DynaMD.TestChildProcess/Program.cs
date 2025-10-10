@@ -28,7 +28,8 @@ namespace DynaMD.TestChildProcess
                 new StructWithDate(),
                 new StructWithArray(),
                 CreateDictionary(),
-                new ConcurrentQueue<int>()
+                new ConcurrentQueue<int>(),
+                new ClassWithEnum()
             };
 
             Console.WriteLine(Ready);
@@ -186,4 +187,14 @@ namespace DynaMD.TestChildProcess
         }
     }
 
+    public class ClassWithEnum
+    {
+        public ByteEnum Value = ByteEnum.B;
+    }
+
+    public enum ByteEnum : byte
+    {
+        A = 1,
+        B = 2
+    }
 }

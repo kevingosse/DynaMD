@@ -86,10 +86,6 @@ namespace DynaMD.Tests
         [Test]
         public void Can_cast_to_string()
         {
-            var proxy = GetProxy<ClassWithStringField>();
-
-            ClrType type = proxy.GetClrType();
-
             ulong stringAddress = 0;
 
             // TODO: There may be a faster way :/
@@ -101,16 +97,6 @@ namespace DynaMD.Tests
                     break;
                 }
             }
-
-            var clrObject = new ClrObject((ulong)proxy, type);
-
-            //var address = type.GetFieldByName("Value").GetAddress((ulong)proxy);
-
-            //ulong stringAddress;
-
-            //_heap.
-
-            //_heap.ReadPointer(address, out stringAddress);
 
             Assert.AreEqual("OK", (string)_heap.GetProxy(stringAddress));
         }
@@ -354,6 +340,13 @@ namespace DynaMD.Tests
             var proxy = obj.AsDynamic();
 
             Assert.AreEqual("OK", (string)proxy.Reference.Value);
+        }
+
+        [Test]
+        public void Can_marshal_an_enum()
+        {             
+            var proxy = GetProxy<ClassWithEnum>();
+            Assert.AreEqual(2, (byte)proxy.Value);
         }
 
         private dynamic GetProxy<T>()

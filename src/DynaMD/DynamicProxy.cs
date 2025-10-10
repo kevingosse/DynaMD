@@ -225,7 +225,15 @@ namespace DynaMD
         {
             if (value.Type.IsPrimitive)
             {
-                var realType = System.Type.GetType(value.Type.Name);
+                var type = value.Type;
+
+                if (type.IsEnum)
+                {
+                    var field = type.Fields.Single();
+                    type = field.Type;
+                }
+
+                var realType = System.Type.GetType(type.Name);
                 return Read(value.Address, realType);
             }
 
