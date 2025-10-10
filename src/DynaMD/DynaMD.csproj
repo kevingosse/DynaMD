@@ -18,7 +18,7 @@
 
 	<PropertyGroup>
 		<PackageId>DynaMD</PackageId>
-		<PackageVersion>1.1.0.0</PackageVersion>
+		<PackageVersion>1.1.1.0</PackageVersion>
 		<Title>DynaMD</Title>
 		<Authors>Kevin Gosse</Authors>
 		<Owners>KooKiz</Owners>
@@ -26,7 +26,7 @@
 		<RepositoryUrl>https://github.com/kevingosse/DynaMD</RepositoryUrl>
 		<PackageLicenseUrl>https://github.com/kevingosse/DynaMD/blob/master/LICENSE</PackageLicenseUrl>
 		<Description>Helper objects to browse complex structures returned by ClrMD</Description>
-		<PackageReleaseNotes>Upgrade to ClrMD 3</PackageReleaseNotes>
+		<PackageReleaseNotes>Fix error when reading enum fields</PackageReleaseNotes>
 		<Copyright>Copyright 2017-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
 		<PackageTags>ClrMD WinDBG SOS</PackageTags>
 		<PackageOutputPath>..\..\nugets</PackageOutputPath>
